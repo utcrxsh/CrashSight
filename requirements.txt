@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+ultralytics
+opencv-python-headless
+scipy
+torch
+torchvision
+matplotlib 

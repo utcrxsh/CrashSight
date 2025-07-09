@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Accident Detection Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --surface-gradient: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 10px 25px -3px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--surface-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(217, 70, 239, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .upload-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            position: relative;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--glass-border);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: inherit;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-purple);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .upload-area:hover::before {
+            opacity: 0.05;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-subtext {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), var(--shadow-lg);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn:disabled:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        .loading p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow), var(--shadow-lg);
+        }
+
+        .result-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .alert-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.05));
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .alert-card::before {
+            background: linear-gradient(90deg, var(--danger), #f87171);
+        }
+
+        .alert-card.no-accident {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .alert-card.no-accident::before {
+            background: linear-gradient(90deg, var(--success), #34d399);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .alert-icon {
+            font-size: 2.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .video-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .video-half {
+            flex: 1 1 320px;
+            min-width: 280px;
+            max-width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .heatmap-below {
+            margin-top: 2rem;
+        }
+
+        .video-container {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .video-container:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .video-container video,
+        .video-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-label {
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.95), rgba(26, 26, 62, 0.95));
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .vehicle-types {
+            margin-top: 1rem;
+        }
+
+        .vehicle-types ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .vehicle-types li {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            margin: 0.5rem 0;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 25px;
+        }
+
+        .accident-details {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.04));
+            border-radius: 16px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .accident-header {
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .accident-meta {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 400;
+        }
+
+        .vehicle-info {
+            margin: 1rem 0;
+        }
+
+        .vehicle-info ul {
+            list-style: none;
+            margin: 0.5rem 0 0 0;
+            padding: 0;
+        }
+
+        .vehicle-info li {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .vehicle-info li b {
+            color: var(--accent-purple);
+        }
+
+        .vehicle-detail {
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+        }
+
+        .vehicle-detail span:first-child {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .vehicle-detail span:last-child {
+            color: var(--text-primary);
+            margin-left: 0.5rem;
+        }
+
+        .risk-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .risk-score {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .impact-severity {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-top: 4rem;
+            padding: 3rem;
+        }
+
+        @media (max-width: 1024px) {
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .video-row {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            
+            .video-half {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header {
+                padding: 2rem 1.5rem;
+            }
+            
+            .upload-section {
+                padding: 2rem 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 3rem 1.5rem;
+            }
+            
+            .result-card {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 1rem;
+            }
+
+            .stat-item {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.75rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>🚗 AI Accident Detection Dashboard</h1>
+            <p>Advanced dashcam video analysis powered by Dual Module system for real-time accident detection and comprehensive safety insights</p>
+        </div>
+
+        <div class="upload-section fade-in">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📹</div>
+                <div class="upload-text">Drop your video file here or click to browse</div>
+                <div class="upload-subtext">Supports MP4, AVI, MOV formats • Maximum 500MB</div>
+                <input type="file" id="fileInput" class="file-input" accept="video/*">
+            </div>
+            
+            <button id="analyzeBtn" class="btn" disabled>
+                🔍 Analyze Video
+            </button>
+
+            <div class="loading" id="loadingDiv">
+                <div class="loading-spinner"></div>
+                <p>Analyzing video for accidents... This may take a few moments.</p>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <!-- Results will be populated here -->
+        </div>
+
+        <div class="no-results" id="noResults">
+            Upload a video to see accident detection results
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let analysisResults = null;
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.querySelector('.upload-area');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loadingDiv = document.getElementById('loadingDiv');
+        const resultsSection = document.getElementById('resultsSection');
+        const noResults = document.getElementById('noResults');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a valid video file');
+                return;
+            }
+
+            selectedFile = file;
+            analyzeBtn.disabled = false;
+            
+            // Update upload area text with enhanced styling
+            uploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <div class="upload-text">Selected: ${file.name}</div>
+                <div class="upload-subtext">Size: ${(file.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</div>
+            `;
+        }
+
+        // Analyze button click
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Show loading
+            analyzeBtn.disabled = true;
+            loadingDiv.style.display = 'block';
+            resultsSection.style.display = 'none';
+            noResults.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                analysisResults = await response.json();
+                console.log('Analysis results:', analysisResults);
+                
+                displayResults(analysisResults);
+                
+            } catch (error) {
+                console.error('Error analyzing video:', error);
+                alert('Error analyzing video. Please check your connection and try again.');
+            } finally {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function displayResults(results) {
+            resultsSection.innerHTML = '';
+            
+            // Alert card
+            const alertCard = document.createElement('div');
+            alertCard.className = `result-card alert-card ${!results.accident_detected ? 'no-accident' : ''}`;
+            
+            const alertIcon = results.accident_detected ? '🚨' : '✅';
+            const alertText = results.accident_detected ? 'ACCIDENT DETECTED' : 'NO ACCIDENT DETECTED';
+            const alertColor = results.accident_detected ? 'var(--danger)' : 'var(--success)';
+            
+            alertCard.innerHTML = `
+                <div class="alert-title">
+                    <span class="alert-icon" style="color: ${alertColor}">${alertIcon}</span>
+                    ${alertText}
+                </div>
+            `;
+            
+            resultsSection.appendChild(alertCard);
+
+            if (results.accident_detected) {
+                // Statistics card (full width)
+                const statsCard = document.createElement('div');
+                statsCard.className = 'result-card full-width';
+                statsCard.innerHTML = `
+                    <div class="card-title">📊 Analysis Statistics</div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${results.vehicle_count || 0}</div>
+                            <div class="stat-label">Vehicles Detected</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${results.accident_frames ? results.accident_frames.length : 0}</div>
+                            <div class="stat-label">Accident Frames</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${results.cnn_prediction ? (results.cnn_prediction * 100).toFixed(1) + '%' : 'N/A'}</div>
+                            <div class="stat-label">CNN Confidence</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${results.yolo_risk_score ? results.yolo_risk_score.toFixed(3) : 'N/A'}</div>
+                            <div class="stat-label">YOLO Risk Score</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${results.vehicle_class_counts && typeof results.vehicle_class_counts.person !== 'undefined' ? results.vehicle_class_counts.person : 0}</div>
+                            <div class="stat-label">Pedestrians/Humans</div>
+                        </div>
+                    </div>
+                    ${results.vehicle_class_counts ? `
+                        <div class="vehicle-types">
+                            <h4 style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 1rem; font-weight: 600;">Vehicle Distribution</h4>
+                            <ul>
+                                ${Object.entries(results.vehicle_class_counts)
+                                    .filter(([type, _]) => type !== 'person')
+                                    .map(([type, count]) => `<li>${type.charAt(0).toUpperCase() + type.slice(1)}: ${count}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+                resultsSection.appendChild(statsCard);
+
+                // Videos card (side by side for raw/annotated, heatmap below)
+                const videosCard = document.createElement('div');
+                videosCard.className = 'result-card full-width';
+                videosCard.innerHTML = `
+                    <div class="card-title">🎥 Analysis Videos</div>
+                    <div class="video-row">
+                        ${results.raw_clip ? `
+                        <div class="video-half">
+                            <div class="video-container">
+                                <video controls>
+                                    <source src="${results.raw_clip}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-label">Raw Accident Clip (5s before/after)</div>
+                            </div>
+                            <a href="${results.raw_clip}" download class="btn download-btn">⬇️ Download Raw Clip</a>
+                        </div>
+                        ` : ''}
+                        ${results.annotated_clip ? `
+                        <div class="video-half">
+                            <div class="video-container">
+                                <video controls>
+                                    <source src="${results.annotated_clip}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-label">Annotated Accident Clip (bounding boxes, tracking)</div>
+                            </div>
+                            <a href="${results.annotated_clip}" download class="btn download-btn">⬇️ Download Annotated Clip</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${results.cnn_heatmap_video ? `
+                        <div class="heatmap-below">
+                            <div class="video-container">
+                                <img src="${results.cnn_heatmap_video.replace('.mp4', '_summary.png')}" style="width:100%;border-radius:16px;">
+                                <div class="video-label">CNN Attention Heatmap Summary</div>
+                            </div>
+                            <a href="${results.cnn_heatmap_video.replace('.mp4', '_summary.png')}" download class="btn download-btn">⬇️ Download Heatmap</a>
+                        </div>
+                    ` : ''}
+                `;
+                resultsSection.appendChild(videosCard);
+
+                // Accident Details card (full width, last)
+                if (results.collision_report) {
+                    const reportCard = document.createElement('div');
+                    reportCard.className = 'result-card full-width';
+                    reportCard.innerHTML = `
+                        <div class="card-title">📋 Accident Analysis Report</div>
+                        <div style="margin-bottom: 2rem;">
+                            <a href="${results.collision_report}" target="_blank" download class="btn download-btn" style="font-size: 1rem; padding: 1rem 2rem;">
+                                📄 Download Complete Report
+                            </a>
+                        </div>
+                        <div id="structuredAccidentDetails"></div>
+                    `;
+                    resultsSection.appendChild(reportCard);
+                    
+                    if (results.structured_accident_details && results.structured_accident_details.length > 0) {
+                        const detailsDiv = document.getElementById('structuredAccidentDetails');
+                        detailsDiv.innerHTML = results.structured_accident_details.map(acc => `
+                            <div class="accident-details">
+                                <div class="accident-header">
+                                    🚗 Accident #${acc.accident_number} 
+                                    <span class="accident-meta">Frame: ${acc.frame} • Time: ${acc.time}s</span>
+                                </div>
+                                
+                                <div class="vehicle-info">
+                                    <h4 style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 1rem; font-weight: 600;">Vehicles Involved</h4>
+                                    <ul>
+                                        <li>
+                                            <b>Vehicle 1</b>
+                                            <div class="vehicle-detail">
+                                                <span>ID:</span>
+                                                <span>${acc.vehicle_1?.id ?? 'N/A'}</span>
+                                            </div>
+                                            <div class="vehicle-detail">
+                                                <span>Type:</span>
+                                                <span>${acc.vehicle_1?.class || 'N/A'}</span>
+                                            </div>
+                                            <div class="vehicle-detail">
+                                                <span>Detection Confidence:</span>
+                                                <span>${acc.vehicle_1?.confidence !== null && acc.vehicle_1?.confidence !== undefined ? acc.vehicle_1.confidence.toFixed(2) : 'N/A'}</span>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <b>Vehicle 2</b>
+                                            <div class="vehicle-detail">
+                                                <span>ID:</span>
+                                                <span>${acc.vehicle_2?.id ?? 'N/A'}</span>
+                                            </div>
+                                            <div class="vehicle-detail">
+                                                <span>Type:</span>
+                                                <span>${acc.vehicle_2?.class || 'N/A'}</span>
+                                            </div>
+                                            <div class="vehicle-detail">
+                                                <span>Detection Confidence:</span>
+                                                <span>${acc.vehicle_2?.confidence !== null && acc.vehicle_2?.confidence !== undefined ? acc.vehicle_2.confidence.toFixed(2) : 'N/A'}</span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="risk-info">
+                                    <div>
+                                        <strong>Risk Score:</strong> 
+                                        <span class="risk-score">${acc.risk_score !== null && acc.risk_score !== undefined ? acc.risk_score.toFixed(3) : 'N/A'}</span>
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } else {
+                // No accident - show full annotated video and full raw video side by side
+                const videoCard = document.createElement('div');
+                videoCard.className = 'result-card full-width';
+                videoCard.innerHTML = `
+                    <div class="card-title">🎥 Processed Video Analysis</div>
+                    <div class="video-row">
+                        ${results.full_raw_video ? `
+                        <div class="video-half">
+                            <div class="video-container">
+                                <video controls>
+                                    <source src="${results.full_raw_video}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-label">Raw Uploaded Video</div>
+                            </div>
+                            <a href="${results.full_raw_video}" download class="btn download-btn">⬇️ Download Raw Video</a>
+                        </div>
+                        ` : ''}
+                        ${results.full_annotated_video ? `
+                        <div class="video-half">
+                            <div class="video-container">
+                                <video controls>
+                                    <source src="${results.full_annotated_video}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-label">Complete Annotated Video Analysis</div>
+                            </div>
+                            <a href="${results.full_annotated_video}" download class="btn download-btn">⬇️ Download Annotated Video</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${results.vehicle_count || 0}</div>
+                            <div class="stat-label">Vehicles Detected</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">Safe</div>
+                            <div class="stat-label">Traffic Status</div>
+                        </div>
+                    </div>
+                `;
+                resultsSection.appendChild(videoCard);
+
+                // Additional stats for no-accident case
+                if (results.vehicle_class_counts) {
+                    const additionalStatsCard = document.createElement('div');
+                    additionalStatsCard.className = 'result-card';
+                    additionalStatsCard.innerHTML = `
+                        <div class="card-title">📈 Traffic Analysis</div>
+                        <div class="vehicle-types">
+                            <h4 style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 1rem; font-weight: 600;">Vehicle Distribution</h4>
+                            <ul>
+                                ${Object.entries(results.vehicle_class_counts)
+                                    .map(([type, count]) => `<li>${type.charAt(0).toUpperCase() + type.slice(1)}: ${count}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    resultsSection.appendChild(additionalStatsCard);
+                }
+            }
+
+            resultsSection.style.display = 'grid';
+            resultsSection.classList.add('fade-in');
+            noResults.style.display = 'none';
+
+            // Add staggered animation to cards
+            const cards = resultsSection.querySelectorAll('.result-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('slide-up');
+            });
+        }
+    </script>
+</body>
+</html>
