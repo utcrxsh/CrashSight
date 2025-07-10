@@ -1,114 +1,141 @@
-# CrashSight - AI-Powered Car Accident Detection
+# 🚗 CrashSight – Real-Time Car Accident Detection with AI
 
-This system automatically detects car accidents in real-time using computer vision and deep learning. Think of it as an intelligent surveillance system that can watch traffic footage and instantly identify when crashes happen.
-
-## What It Does
-
-CrashSight analyzes video feeds (from traffic cameras, dashcams, or security cameras) and automatically:
-- Detects when accidents occur
-- Tracks vehicles and their movements
-- Creates detailed reports with video evidence
-- Highlights exactly where the system "looked" to make its decision
-
-## Why This Matters
-
-Traditional accident detection relies on:
-- Manual monitoring (expensive and prone to human error)
-- Phone calls from witnesses (delayed response)
-- Physical sensors (limited coverage)
-
-CrashSight provides:
-- **Instant detection** - No waiting for someone to report
-- **24/7 monitoring** - Never gets tired or distracted  
-- **Detailed evidence** - Automatic video clips and reports
-- **Cost effective** - One system monitors multiple locations
-
-## How It Works (Technical Overview)
-
-I built this using a two-part approach:
-
-### Part 1: Vehicle Tracking
-- Uses YOLOv8 (state-of-the-art object detection) to find cars in video
-- Tracks each vehicle's movement and speed
-- Calculates risk scores based on sudden direction changes, speed shifts, and collision angles
-
-### Part 2: Scene Understanding
-- Uses a custom deep learning model (ResNet18 + attention mechanisms) to understand what's happening in the scene
-- Trained on 1,000+ accident videos to recognize crash patterns
-- Generates "attention maps" showing exactly what the AI focused on
-
-### The Smart Part
-Both systems work together - if one detects something suspicious, it cross-checks with the other. This reduces false alarms while catching real accidents.
-
-## Key Results
-
-- **99% accuracy** on test videos
-- **Real-time processing** - works with live camera feeds
-- **Handles edge cases** - catches accidents other systems miss
-- **Low false positives** - won't trigger on normal traffic
-
-## Project Structure
-
-```
-app/
-├── api.py                # Web server for uploading videos
-├── main.py               # Command-line version
-├── index.html            # Simple web interface
-├── detection/            # Vehicle tracking and crash detection
-├── attention/            # Deep learning model and visualizations
-├── utils/                # Helper functions for video processing
-├── uploads/              # Where uploaded videos go
-├── static/               # Generated reports and clips
-└── models/               # AI model files
-```
-
-## What You Get
-
-When the system detects an accident, it automatically creates:
-
-1. **Annotated video clip** - Shows bounding boxes around vehicles and their paths
-2. **Attention heatmap** - Visual showing where the AI was "looking"
-3. **Crash report** - JSON file with timestamps, vehicle info, and confidence scores
-4. **Evidence package** - Everything saved in H.264 format for easy sharing
-
-## Real-World Applications
-
-- **Traffic Management**: City traffic centers can monitor intersections
-- **Insurance**: Automatic crash documentation for claims
-- **Fleet Management**: Monitor company vehicles
-- **Research**: Analyze accident patterns for safety improvements
-
-## Technical Skills Demonstrated
-
-- **Computer Vision**: Object detection, tracking, motion analysis
-- **Deep Learning**: Custom model architecture, attention mechanisms
-- **Real-time Processing**: Optimized for live video streams
-- **Full-stack Development**: API, web interface, CLI tools
-- **Data Engineering**: Video processing, model training pipeline
-
-## Installation
-
-```bash
-git clone https://github.com/yourusername/crashsight.git
-cd crashsight
-pip install -r requirements.txt
-unicorn api:app --reload
-```
-
-## 🚀 Technologies Used
-
-- **Python** – Core programming language  
-- **PyTorch** – Deep learning framework  
-- **OpenCV** – Video processing and annotations  
-- **YOLOv8** – Real-time object detection  
-- **ResNet18 / ResNet50** – Scene classification backbones  
-- **TSM (Temporal Shift Module)** – Temporal modeling in videos  
-- **CBAM** – Attention refinement module  
-- **Multi-Head Attention** – Temporal feature enhancement  
-- **FastAPI** – Backend API framework  
-- **HTML / CSS / JavaScript** – Frontend interface
-
+CrashSight is a real-time car crash detection system that combines fast object tracking with deep scene understanding to identify accidents as they happen. It’s designed for real-world deployment on traffic footage — smart intersections, fleet monitoring, or dashcams.
 
 ---
 
+##  What It Does
 
+- Detects vehicle collisions from raw video using computer vision
+- Tracks object motion and dynamics across time
+- Classifies crash patterns using an attention-enhanced CNN
+- Outputs annotated clips, attention maps, and structured crash reports
+
+---
+
+##  System Overview
+
+CrashSight runs a two-stage accident detection pipeline:
+
+### 1. Vehicle Tracking & Motion Risk Analysis
+
+- **YOLOv8** detects vehicles in each frame  
+- A custom **Centroid Tracker** estimates speed, acceleration, and trajectory angles  
+- Collision candidates are flagged when:
+  - Bounding boxes intersect
+  - Motion shows abnormal deceleration or direction change
+
+### 2. Scene Understanding via Attention CNN
+
+- **ResNet18 + TSM + CBAM + Multi-Head Attention**
+- Learns crash semantics from over 1,000 labeled videos
+- Produces heatmaps (via Grad-CAM++) showing model attention
+
+### Triggering Logic
+
+By default, Module 2 runs **only when Module 1 flags risk** — either via bounding box collision or abnormal motion score.  
+If hardware permits, both modules can run in parallel for full-score fusion:
+
+```python
+final_score = α * motion_score + β * scene_score
+```
+
+### Outputs
+
+- 📹 Annotated video with bounding boxes, speed labels, collision tags  
+- 🌡️ Attention heatmaps (visual explanations)  
+- 📝 Structured crash reports (JSON & text)  
+- 🎞️ Accident clips in H.264 (annotated + raw)
+
+---
+
+##  Key Features
+
+- Real-time: ~30 FPS (GPU) or 10–15 FPS (CPU)
+- Risk scoring based on motion vectors + collision angles
+- Scene classification with attention maps
+- Velocity and acceleration tracking per vehicle
+- Collision type estimation (e.g. rear-end, side-impact)
+- Auto-generated video segments for detected crashes
+
+---
+
+##  Project Structure
+
+```
+main.py                 # Core crash detection pipeline
+models/                 # YOLO + CNN weights
+app/                    # Web/API interface
+utils/                  # Video processing tools
+static/                 # Outputs, heatmaps, visual assets
+```
+
+---
+
+##  Technical Stack
+
+| Component               | Tech Used                              |
+|------------------------|-----------------------------------------|
+| Object Detection        | YOLOv8                                  |
+| Motion Tracking         | Custom CentroidTracker                  |
+| Scene Classifier        | ResNet18 + TSM + CBAM + MHA             |
+| Video Processing        | OpenCV, FFmpeg                          |
+| Heatmap Visualization   | Grad-CAM++, Matplotlib                  |
+| Backend/API             | FastAPI                                 |
+| Deployment Format       | ONNX, MP4, JSON                         |
+
+---
+
+##  Results
+
+- **99% accuracy** on test set (1,000+ crash/no-crash clips)
+- Detects edge cases missed by motion-only or scene-only models
+- Auto-tags: rear-end, side-impact, angled collisions
+- Generates structured reports (with velocity & class info)
+
+---
+
+##  Usage
+
+### 1. Install Requirements
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Run Detection on a Video
+
+```bash
+python main.py
+```
+
+Modify the paths in `main.py` to point to your input `.mp4` file and output directory.
+
+### 3. Output Files
+
+After processing, you'll get:
+
+- `output_full.mp4` – Full annotated video  
+- `*_accident_*.mp4` – Short clips for detected events  
+- `collision_report.txt` – Human-readable crash logs  
+- `attention_summary.png` – CNN attention visualization  
+
+---
+
+##  Real-World Applications
+
+- **Traffic Surveillance:** Monitor intersections for accidents in real time  
+- **Fleet Monitoring:** Detect high-risk behavior across company vehicles  
+- **Insurance:** Automatic documentation for claims  
+- **Smart Cities:** Real-time road safety analysis  
+- **Research:** Study vehicle dynamics in real-world crashes  
+
+---
+
+##  Future Improvements
+
+- Integrate LSTM/GRU for longer temporal context  
+- Expand crash taxonomy (e.g., near-miss, pedestrian events)  
+- Optimize for edge deployment 
+
+---
