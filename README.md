@@ -140,34 +140,6 @@ Here’s a real example showing how CrashSight processes a traffic video:
 
 ---
 
-
-##  Usage
-
-### 1. Install Requirements
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Run Detection on a Video
-
-```bash
-python main.py
-```
-
-Modify the paths in `main.py` to point to your input `.mp4` file and output directory.
-
-### 3. Output Files
-
-After processing, you'll get:
-
-- `output_full.mp4` – Full annotated video  
-- `*_accident_*.mp4` – Short clips for detected events  
-- `collision_report.txt` – Human-readable crash logs  
-- `attention_summary.png` – CNN attention visualization  
-
----
-
 ##  Real-World Applications
 
 - **Traffic Surveillance:** Monitor intersections for accidents in real time  
