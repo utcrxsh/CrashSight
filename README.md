@@ -87,7 +87,7 @@ static/                 # Outputs, heatmaps, visual assets
 
 | Component               | Tech Used                              |
 |------------------------|-----------------------------------------|
-| Object Detection        | YOLOv8                                  |
+| Object Detection        | YOLOv11                                 |
 | Motion Tracking         | Custom CentroidTracker                  |
 | Scene Classifier        | ResNet18 + TSM + CBAM + MHA             |
 | Video Processing        | OpenCV, FFmpeg                          |
